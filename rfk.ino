@@ -59,11 +59,14 @@ int NUM_DIALOGUES;
 
 position_t roboPos;
 
-nki_t nki[NUM_NKIS];
+nki_t NKI[NUM_NKIS];
 
 
 int MAP[SCREEN_RIGHT][SCREEN_BOTTOM];
 
+int MODE = 0;
+
+int NKI_INDEX = -1;
 
 Arduboy2 arduboy;
 
@@ -73,64 +76,95 @@ void setup() {
   arduboy.initRandomSeed();
   arduboy.clear();
   
-  spawnNKIs();
   
-
+  
+  // for (int i=0; i<SCREEN_BOTTOM; i++) {
+  //   for (int j=0; j<SCREEN_RIGHT; j++) {
+  //     arduboy.print(MAP[j][i]);
+  //   }
+  //   arduboy.print("\n");
+  // }
+  
+  
   arduboy.display();
-
 }
 
 void loop() {
-  /*arduboy.clear();
-  arduboy.pollButtons();
-  position_t target = roboPos;
-  if (arduboy.justPressed(UP_BUTTON)) {
-    target.y = max(roboPos.y-1, SCREEN_TOP);
-  } else if (arduboy.justPressed(DOWN_BUTTON)) {
-    target.y = min(roboPos.y+1, SCREEN_BOTTOM);
-  } else if (arduboy.justPressed(LEFT_BUTTON)) {
-    target.x = max(roboPos.x-1, SCREEN_LEFT);
-  } else if (arduboy.justPressed(RIGHT_BUTTON)) {
-    target.x = min(roboPos.x+1, SCREEN_RIGHT);
+  arduboy.clear();
+  displayNKIs();
+  
+  if (MODE==0) {
+    arduboy.pollButtons();
+    position_t target = roboPos;
+    if (arduboy.justPressed(UP_BUTTON)) {
+      target.y = max(roboPos.y-1, SCREEN_TOP);
+    } else if (arduboy.justPressed(DOWN_BUTTON)) {
+      target.y = min(roboPos.y+1, SCREEN_BOTTOM);
+    } else if (arduboy.justPressed(LEFT_BUTTON)) {
+      target.x = max(roboPos.x-1, SCREEN_LEFT);
+    } else if (arduboy.justPressed(RIGHT_BUTTON)) {
+      target.x = min(roboPos.x+1, SCREEN_RIGHT);
+    }
+    
+    if (!occupied(target)) {
+      roboPos = target;
+    } else {
+      MODE=1;
+      NKI_INDEX = MAP[target.x][target.y];
+    }
+    position_t screen = screenPos(roboPos);
+    arduboy.setCursor(screen.x, screen.y);
+    arduboy.print(ROBOCHAR);
+  } else {
+    displayDialogue(NKI[NKI_INDEX].dialogue);
+    arduboy.pollButtons();
+    if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(B_BUTTON)) {
+      MODE = 0;
+    }
   }
-  roboPos = target;
-  position_t screen = screenPos(roboPos);
-  arduboy.setCursor(screen.x, screen.y);
-  arduboy.print(ROBOCHAR);
-  arduboy.display();*/
+  
+
+  arduboy.display();
 }
 
 void initialise() {
-  // set robot position
 
   NUM_CHARS = strlen(characters);
   NUM_DIALOGUES = sizeof(dialogues)/sizeof(dialogues[0]);
   initialiseMap();  
   roboPos = randomSpawnPoint();
-  MAP[roboPos.x][roboPos.y] = 1;
+  while (occupied(roboPos)) {
+    roboPos = randomSpawnPoint();
+  }
+  spawnNKIs();
 }
 
 void initialiseMap() {
   for (int i=0; i<SCREEN_RIGHT; i++) {
     for (int j=0; j<SCREEN_BOTTOM; j++) {
-      MAP[i][j] = 0;
+      MAP[i][j] = -1;
     }
   }
 }
 
 void spawnNKIs() {
   for (int i=0; i<NUM_NKIS; i++) {
-    nki[i].character = characters[random(0,NUM_CHARS)];
-    nki[i].dialogue = dialogues[random(0, NUM_DIALOGUES)];
+    NKI[i].character = characters[random(0,NUM_CHARS)];
+    NKI[i].dialogue = dialogues[random(0, NUM_DIALOGUES)];
     position_t spawnPos = randomSpawnPoint();
     while (occupied(spawnPos)) {
       spawnPos = randomSpawnPoint();
     }
-    MAP[spawnPos.x][spawnPos.y] = 1;
-    nki[i].pos = spawnPos;
-    position_t nkiPos = screenPos(nki[i].pos);
+    MAP[spawnPos.x][spawnPos.y] = i;
+    NKI[i].pos = spawnPos;
+  }
+}
+
+void displayNKIs() {
+  for (int i=0; i<NUM_NKIS; i++) {
+    position_t nkiPos = screenPos(NKI[i].pos);
     arduboy.setCursor(nkiPos.x, nkiPos.y);
-    arduboy.print(nki[i].character);
+    arduboy.print(NKI[i].character);
   }
 }
 
@@ -141,14 +175,6 @@ position_t randomSpawnPoint() {
   return temp;
 }
 
-  /*nki[0].character = characters[random(0,NUM_CHARS)];
-  nki[0].dialogue = dialogues[random(0,NUM_DIALOGUES)];
-  nki[0].pos.x = random(SCREEN_LEFT, SCREEN_RIGHT);
-  nki[0].pos.y = random(SCREEN_TOP, SCREEN_BOTTOM);
-  position_t nkiPos = screenPos(nki[0].pos);
-  arduboy.setCursor(nkiPos.x, nkiPos.y);
-  arduboy.print(nki[0].character);*/
-
 position_t screenPos(position_t pos) { 
   position_t temp;
   temp.x = pos.x*CHAR_WIDTH;
@@ -157,11 +183,12 @@ position_t screenPos(position_t pos) {
 }
 
 bool occupied(position_t pos) {
-  return (MAP[pos.x][pos.y] > 0);
+  return (MAP[pos.x][pos.y] > -1);
 }
 
 
-void display(char* msg) {
+void displayDialogue(char* msg) {
+  arduboy.clear();
   arduboy.drawRect(SCREEN_LEFT_PX, SCREEN_TOP_PX, 
                    SCREEN_RIGHT_PX, SCREEN_BOTTOM_PX);
   
