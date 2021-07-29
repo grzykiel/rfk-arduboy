@@ -8,6 +8,14 @@
 #define max(x, y) x>y?x:y
 #define min(x, y) x<y?x:y
 
+//game modes
+#define MODE_START      0
+#define MODE_MAP        1
+#define MODE_DIALOGUE   2
+#define MODE_RESTART    3
+#define MODE_FINDKITTEN 4
+#define MODE_PLAYAGAIN  5
+
 //constants
 #define SCREEN_LEFT 0
 #define SCREEN_RIGHT 20
@@ -22,10 +30,14 @@
 #define CHAR_WIDTH 6;
 #define CHAR_HEIGHT 8;
 
+#define FRAME_RATE 60
+
 #define MAX_DIALOGUE_SIZE 140 //screen size in characters
 
 #define ROBOCHAR '#'
 #define KITTEN 256 // arbitrary index greater than NUM_NKI
+
+
 
 // types
 typedef struct {
@@ -45,11 +57,7 @@ position_t screenPos(position_t pos);
  
 
 //globals
-const int NUM_NKIS = 5;
-
-char characters[] = "`~1234567890!@$%^&*()[]{}\\|\'\",<.>-_;:abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-int NUM_CHARS;
+const int NUM_NKIS = 9;
 
 const char* dialogues[] = {
   "A signpost saying \"TO KITTEN\". It points in no particular direction.",
@@ -69,7 +77,7 @@ nki_t kitten;
 
 int MAP[SCREEN_RIGHT+1][SCREEN_BOTTOM+1];
 
-int MODE = 0;
+byte MODE = MODE_START;
 
 int NKI_INDEX = -1;
 
@@ -78,20 +86,40 @@ Arduboy2 arduboy;
 void setup() {
   initialise();
   arduboy.begin();
+  arduboy.setFrameRate(FRAME_RATE);
   arduboy.initRandomSeed();
-  arduboy.clear();
-  
-  
-  arduboy.display();
+  // arduboy.clear();
 }
 
 void loop() {
+  if(!(arduboy.nextFrame())) return;
+  arduboy.pollButtons();
   arduboy.clear();
-  displayAllNKIs();
-  displayNKI(kitten);
   
-  if (MODE==0) {
-    arduboy.pollButtons();
+  switch (MODE) {
+    case MODE_START:
+      modeStart();
+      break;
+    case MODE_MAP:
+      modeMap();
+      break;
+    case MODE_DIALOGUE:
+      modeDialogue();
+      break;
+  }
+  arduboy.display();
+}
+
+void modeStart() {
+  if (arduboy.justPressed(A_BUTTON | B_BUTTON)) {
+    MODE = MODE_MAP;
+    return;
+  }
+  arduboy.setCursor(0,SCREEN_BOTTOM_PX/2);
+  arduboy.print("robotfindskitten");
+}
+
+void modeMap() {
     position_t target = robot.pos;
     if (arduboy.justPressed(UP_BUTTON)) {
       target.y = max(robot.pos.y-1, SCREEN_TOP);
@@ -106,31 +134,28 @@ void loop() {
     if (!occupied(target)) {
       robot.pos = target;
     } else {
-      MODE=1;
+      MODE=MODE_DIALOGUE;
       NKI_INDEX = MAP[target.x][target.y];
     }
-    position_t screen = screenPos(robot.pos);
-    arduboy.setCursor(screen.x, screen.y);
-    arduboy.print(robot.character);
-  } else {
-    if (NKI_INDEX == KITTEN) {
+    displayNKI(robot);
+    displayNKI(kitten);
+    displayAllNKIs();
+
+}
+
+void modeDialogue() {
+  if (NKI_INDEX == KITTEN) {
       displayDialogue(kitten.dialogue);
     } else {
       displayDialogue(NKI[NKI_INDEX].dialogue);
     }
-    arduboy.pollButtons();
     if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(B_BUTTON)) {
-      MODE = 0;
+      MODE = MODE_MAP;
     }
-  }
-  
-
-  arduboy.display();
 }
 
 void initialise() {
 
-  NUM_CHARS = strlen(characters);
   NUM_DIALOGUES = sizeof(dialogues)/sizeof(dialogues[0]);
   initialiseMap();  
   //initialise NKIs
@@ -139,7 +164,7 @@ void initialise() {
   robot.character = ROBOCHAR;
   robot.pos = unoccupiedPosition();
   //initialise kitten
-  kitten.character = random(0, NUM_CHARS);
+  kitten.character = randomCharacter();
   kitten.pos = unoccupiedPosition();
   MAP[kitten.pos.x][kitten.pos.y] = KITTEN;
   kitten.dialogue = kittenDialogue;
@@ -156,7 +181,7 @@ void initialiseMap() {
 
 void spawnNKIs() {
   for (int i=0; i<NUM_NKIS; i++) {
-    NKI[i].character = characters[random(0,NUM_CHARS)];
+    NKI[i].character = randomCharacter();
     NKI[i].dialogue = dialogues[random(0, NUM_DIALOGUES)];
     position_t spawnPos = unoccupiedPosition();
     MAP[spawnPos.x][spawnPos.y] = i;
@@ -200,6 +225,14 @@ position_t screenPos(position_t pos) {
 
 bool occupied(position_t pos) {
   return (MAP[pos.x][pos.y] > -1);
+}
+
+char randomCharacter() {
+  int ascii = random(33, 256);
+  while (ascii == 35 || (ascii > 126 && ascii < 161)) {
+    ascii = random(33, 256);
+  }
+  return (char) ascii;
 }
 
 
