@@ -3,10 +3,7 @@
 // See: https://mlxxxp.github.io/documents/Arduino/libraries/Arduboy2/Doxygen/html/
 #include <Arduboy2.h>
 #include <string.h>
-
-//macros
-#define max(x, y) x>y?x:y
-#define min(x, y) x<y?x:y
+#include "macros.h"
 
 //game modes
 #define MODE_START                0
@@ -43,8 +40,6 @@
 #define YES 1
 #define NO  0
 
-
-
 // types
 typedef struct {
   int x;
@@ -71,7 +66,6 @@ const char* dialogues[] = {
   "A third message"
 };
 
-char* kittenDialogue = "You found kitten!";
 
 int NUM_DIALOGUES;
 
@@ -176,9 +170,9 @@ void modeDialogue() {
 void modeFindKittenAnimation() {
   if (animationFrames==0) {
       robot.pos.x = SCREEN_LEFT+6;
-      robot.pos.y = 3;
+      robot.pos.y = 4;
       kitten.pos.x = SCREEN_RIGHT-5;
-      kitten.pos.y = 3;
+      kitten.pos.y = 4;
   }
   if (arduboy.everyXFrames(60)) {
     if (animationFrames < 4) {
@@ -195,9 +189,6 @@ void modeFindKittenAnimation() {
     arduboy.setCursor(heartPos.x, heartPos.y);
     arduboy.print(HEART);
     arduboy.print(HEART);  
-    // if (arduboy.justPressed(A_BUTTON | B_BUTTON)) {
-    //   MODE = MODE_PLAYAGAIN;
-    // }
   } else if (animationFrames==6) {
     MODE = MODE_PLAYAGAIN;
   }
@@ -212,9 +203,24 @@ void modePlayAgain() {
   print("Play again?\n");
   print("\n");
   print(" Yes\n No");
-  if (arduboy.justPressed(A_BUTTON | B_BUTTON)) {
-    initialise();
-    MODE = MODE_MAP;
+  if (cursorSelection == YES) {
+    arduboy.setCursor(SCREEN_LEFT, 40);
+  } else {
+    arduboy.setCursor(SCREEN_LEFT, 48);
+  }
+  arduboy.print(CURSOR);
+  if (arduboy.justPressed(DOWN_BUTTON)) {
+    cursorSelection = NO;
+  } else if (arduboy.justPressed(UP_BUTTON)) {
+    cursorSelection = YES;
+  }
+  if (arduboy.justPressed(B_BUTTON)) {
+    if (cursorSelection == YES) {
+      initialise();
+      MODE = MODE_MAP;
+    } else {
+      MODE = MODE_START;
+    }
   }
 }
 
@@ -232,7 +238,6 @@ void initialise() {
   kitten.character = randomCharacter();
   kitten.pos = unoccupiedPosition();
   MAP[kitten.pos.x][kitten.pos.y] = KITTEN;
-  kitten.dialogue = kittenDialogue;
 
 }
 
@@ -333,11 +338,6 @@ void displayDialogue(char* msg) {
 void print(char* str) {
   int N = strlen(str);
   for (int i=0; i<N; i++) {
-    // if *(str+i) == '\n' {
-    //   arduboy.print("\n");
-    // } else {
-    //   arduboy.print(*(str+i));
-    // }
     arduboy.print(*(str+i));
   }
 }
