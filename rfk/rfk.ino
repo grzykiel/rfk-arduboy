@@ -18,26 +18,30 @@
 #define MODE_PLAYAGAIN            6
 
 //constants
-#define SCREEN_LEFT 0
-#define SCREEN_RIGHT 20
-#define SCREEN_TOP 0
+#define SCREEN_LEFT   0
+#define SCREEN_RIGHT  20
+#define SCREEN_TOP    0
 #define SCREEN_BOTTOM 7
 
-#define SCREEN_LEFT_PX 0
-#define SCREEN_RIGHT_PX 128
-#define SCREEN_TOP_PX 0
-#define SCREEN_BOTTOM_PX 64
+#define SCREEN_LEFT_PX    0
+#define SCREEN_RIGHT_PX   128
+#define SCREEN_TOP_PX     0
+#define SCREEN_BOTTOM_PX  64
 
-#define CHAR_WIDTH 6;
+#define CHAR_WIDTH  6;
 #define CHAR_HEIGHT 8;
 
 #define FRAME_RATE 60
 
 #define MAX_DIALOGUE_SIZE 140 //screen size in characters
 
-#define ROBOCHAR '#'
-#define KITTEN 256 // arbitrary index greater than NUM_NKI
-#define HEART '\x03'
+#define ROBOCHAR  '#'
+#define KITTEN    256 // arbitrary index greater than NUM_NKI
+#define HEART     '\x03'
+#define CURSOR    '\x10'
+
+#define YES 1
+#define NO  0
 
 
 
@@ -54,8 +58,8 @@ typedef struct {
 } nki_t;
 
 // function prototypes
-void display(char* msg);
-position_t screenPos(position_t pos);
+// void display(char* msg);
+// position_t screenPos(position_t pos);
  
 
 //globals
@@ -85,6 +89,8 @@ int NKI_INDEX = -1;
 
 byte animationFrames = 0;
 
+byte cursorSelection = YES;
+
 Arduboy2 arduboy;
 
 
@@ -112,7 +118,11 @@ void loop() {
     case MODE_FINDKITTEN_ANIM:
       modeFindKittenAnimation();
       break;
+    case MODE_PLAYAGAIN:
+      modePlayAgain();
+      break;
   }
+  
   arduboy.display();
 }
 
@@ -171,33 +181,47 @@ void modeFindKittenAnimation() {
       kitten.pos.y = 3;
   }
   if (arduboy.everyXFrames(60)) {
-    if (animationFrames > 0 && animationFrames < 5) {
+    if (animationFrames < 4) {
         robot.pos.x++;
         kitten.pos.x--;
     }
     if (animationFrames<6) animationFrames++;
   }
   
-  if (animationFrames >5) {
+  if (animationFrames == 5) {
     position_t heartPos = robot.pos;
     heartPos.y = robot.pos.y-1;
     heartPos = screenPos(heartPos);
     arduboy.setCursor(heartPos.x, heartPos.y);
     arduboy.print(HEART);
-    arduboy.print(HEART);
+    arduboy.print(HEART);  
+    // if (arduboy.justPressed(A_BUTTON | B_BUTTON)) {
+    //   MODE = MODE_PLAYAGAIN;
+    // }
+  } else if (animationFrames==6) {
+    MODE = MODE_PLAYAGAIN;
   }
     displayNKI(robot);
     displayNKI(kitten);
+}
 
+void modePlayAgain() {
+  print("You found kitten!\n");
+  print("Way to go, robot!\n");
+  print("\n");
+  print("Play again?\n");
+  print("\n");
+  print(" Yes\n No");
   if (arduboy.justPressed(A_BUTTON | B_BUTTON)) {
-    animationFrames = 0;
-    MODE = MODE_START;
+    initialise();
+    MODE = MODE_MAP;
   }
 }
 
 void initialise() {
 
   NUM_DIALOGUES = sizeof(dialogues)/sizeof(dialogues[0]);
+  animationFrames = 0;
   initialiseMap();  
   //initialise NKIs
   spawnNKIs();  
@@ -303,5 +327,20 @@ void displayDialogue(char* msg) {
   for (int i=start; i<strlen(msg); i++) {
      arduboy.print(*(msg+i));
   }
-  
 }
+  
+//recognise newline characters
+void print(char* str) {
+  int N = strlen(str);
+  for (int i=0; i<N; i++) {
+    // if *(str+i) == '\n' {
+    //   arduboy.print("\n");
+    // } else {
+    //   arduboy.print(*(str+i));
+    // }
+    arduboy.print(*(str+i));
+  }
+}
+
+  
+
