@@ -1,5 +1,3 @@
-
-
 // See: https://mlxxxp.github.io/documents/Arduino/libraries/Arduboy2/Doxygen/html/
 #include <Arduboy2.h>
 #include <string.h>
@@ -25,8 +23,8 @@
 #define SCREEN_TOP_PX     0
 #define SCREEN_BOTTOM_PX  64
 
-#define CHAR_WIDTH  6;
-#define CHAR_HEIGHT 8;
+#define CHAR_WIDTH  6
+#define CHAR_HEIGHT 8
 
 #define FRAME_RATE 60
 
@@ -39,6 +37,8 @@
 
 #define YES 1
 #define NO  0
+
+#define NUM_NKIS  2
 
 // types
 typedef struct {
@@ -58,7 +58,16 @@ typedef struct {
  
 
 //globals
-const int NUM_NKIS = 2;
+const char* intro[] = {
+  "robotfindskitten\nBy the illustrious\nLeonard Richardson\n(C) 1997\nWritten especially\nfor the Nerth Pork\nrobotfindskitten\ncontest",
+  "Adapted for Arduboy\nby GRZYKIEL",
+  "In this game, you\nare robot (#). Your\njob is to find\nkitten. This task\nis complicated by\nthe existence of\nvarious things which\nare not kitten.",
+  "Robot must touch\nitems to determine\nif they are kitten\nor not. The game\nends when\nrobotfindskitten.",
+  "Alternatively, you\nmay end the game by\nhitting the B\nbutton. See the\ndocumentation for\nmore information.",
+  "Press any button to\nstart."
+};
+int introIndex = 0;
+int NUM_INTRO;
 
 const char* dialogues[] = {
   "A signpost saying \"TO KITTEN\". It points in no particular direction.",
@@ -66,6 +75,7 @@ const char* dialogues[] = {
   "A third message"
 };
 
+int nki_index = -1;
 
 int NUM_DIALOGUES;
 
@@ -74,12 +84,9 @@ nki_t NKI[NUM_NKIS];
 nki_t robot;
 nki_t kitten;
 
-
 int MAP[SCREEN_RIGHT+1][SCREEN_BOTTOM+1];
 
 byte MODE = MODE_START;
-
-int NKI_INDEX = -1;
 
 byte animationFrames = 0;
 
@@ -122,12 +129,22 @@ void loop() {
 
 void modeStart() {
   initialise();
-  if (arduboy.justPressed(A_BUTTON | B_BUTTON)) {
+  printn(intro[introIndex]);
+  if (arduboy.justPressed(A_BUTTON)) {
     MODE = MODE_MAP;
     return;
+  } else if (arduboy.justPressed(B_BUTTON)) {
+    if (introIndex < NUM_INTRO-1) {
+      introIndex++;
+    } 
+    else {
+      introIndex = 0;
+      MODE = MODE_MAP;
+      return;
+    }
   }
-  arduboy.setCursor(0,SCREEN_BOTTOM_PX/2);
-  arduboy.print("robotfindskitten");
+  // arduboy.setCursor(CHAR_WIDTH*2, SCREEN_BOTTOM_PX/2);
+
 }
 
 void modeMap() {
@@ -145,8 +162,8 @@ void modeMap() {
     if (!occupied(target)) {
       robot.pos = target;
     } else {
-      NKI_INDEX = MAP[target.x][target.y];
-      if (NKI_INDEX==KITTEN) {
+      nki_index = MAP[target.x][target.y];
+      if (nki_index == KITTEN) {
 
         MODE=MODE_FINDKITTEN_ANIM;
       } else {
@@ -160,7 +177,7 @@ void modeMap() {
 }
 
 void modeDialogue() {
-  displayDialogue(NKI[NKI_INDEX].dialogue);
+  displayDialogue(NKI[nki_index].dialogue);
     
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(B_BUTTON)) {
     MODE = MODE_MAP;
@@ -197,12 +214,12 @@ void modeFindKittenAnimation() {
 }
 
 void modePlayAgain() {
-  print("You found kitten!\n");
-  print("Way to go, robot!\n");
-  print("\n");
-  print("Play again?\n");
-  print("\n");
-  print(" Yes\n No");
+  printn("You found kitten!\n");
+  printn("Way to go, robot!\n");
+  printn("\n");
+  printn("Play again?\n");
+  printn("\n");
+  printn(" Yes\n No");
   if (cursorSelection == YES) {
     arduboy.setCursor(SCREEN_LEFT, 40);
   } else {
@@ -227,6 +244,7 @@ void modePlayAgain() {
 void initialise() {
 
   NUM_DIALOGUES = sizeof(dialogues)/sizeof(dialogues[0]);
+  NUM_INTRO = sizeof(intro)/sizeof(intro[0]);
   animationFrames = 0;
   initialiseMap();  
   //initialise NKIs
@@ -238,7 +256,7 @@ void initialise() {
   kitten.character = randomCharacter();
   kitten.pos = unoccupiedPosition();
   MAP[kitten.pos.x][kitten.pos.y] = KITTEN;
-
+  cursorSelection = YES;
 }
 
 void initialiseMap() {
@@ -335,12 +353,9 @@ void displayDialogue(char* msg) {
 }
   
 //recognise newline characters
-void print(char* str) {
+void printn(char* str) {
   int N = strlen(str);
   for (int i=0; i<N; i++) {
     arduboy.print(*(str+i));
   }
 }
-
-  
-
