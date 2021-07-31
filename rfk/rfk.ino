@@ -12,6 +12,8 @@
 #define MODE_FINDKITTEN_DIALOGUE  5
 #define MODE_PLAYAGAIN            6
 
+#define ANY_BUTTON A_BUTTON | B_BUTTON | UP_BUTTON | DOWN_BUTTON | LEFT_BUTTON | RIGHT_BUTTON
+
 //constants
 #define SCREEN_LEFT   0
 #define SCREEN_RIGHT  20
@@ -60,9 +62,9 @@ typedef struct {
 //globals
 const char* intro[] = {
   "robotfindskitten\nBy the illustrious\nLeonard Richardson\n(C) 1997\nWritten especially\nfor the Nerth Pork\nrobotfindskitten\ncontest",
-  "Adapted for Arduboy\nby GRZYKIEL",
-  "In this game, you\nare robot (#). Your\njob is to find\nkitten. This task\nis complicated by\nthe existence of\nvarious things which\nare not kitten.",
-  "Robot must touch\nitems to determine\nif they are kitten\nor not. The game\nends when\nrobotfindskitten.",
+  "Adapted for Arduboy\nby Grzykiel",
+  "In this game, you are\nrobot (#). Your job\nis to find kitten.\nThis task is\ncomplicated by the\nexistence of various\nthings which are\nnot kitten.",
+  "Robot must touch\nitems to determine if\nthey are kitten or\nnot. The game ends\nwhen robotfindskitten.",
   "Alternatively, you\nmay end the game by\nhitting the B\nbutton. See the\ndocumentation for\nmore information.",
   "Press any button to\nstart."
 };
@@ -113,6 +115,9 @@ void loop() {
     case MODE_MAP:
       modeMap();
       break;
+    case MODE_RESTART:
+      modeRestart();
+      break;
     case MODE_DIALOGUE:
       modeDialogue();
       break;
@@ -123,28 +128,27 @@ void loop() {
       modePlayAgain();
       break;
   }
-  
   arduboy.display();
 }
 
 void modeStart() {
   initialise();
   printn(intro[introIndex]);
-  if (arduboy.justPressed(A_BUTTON)) {
-    MODE = MODE_MAP;
-    return;
-  } else if (arduboy.justPressed(B_BUTTON)) {
-    if (introIndex < NUM_INTRO-1) {
+  if (introIndex < NUM_INTRO-1) {
+    if (arduboy.justPressed(A_BUTTON)) {
+      introIndex = 0;
+      MODE = MODE_MAP;
+      return;
+    } else if (arduboy.justPressed(B_BUTTON)) {
       introIndex++;
-    } 
-    else {
+    }
+  } else {
+    if (arduboy.justPressed(ANY_BUTTON)) {
       introIndex = 0;
       MODE = MODE_MAP;
       return;
     }
   }
-  // arduboy.setCursor(CHAR_WIDTH*2, SCREEN_BOTTOM_PX/2);
-
 }
 
 void modeMap() {
@@ -157,6 +161,8 @@ void modeMap() {
       target.x = max(robot.pos.x-1, SCREEN_LEFT);
     } else if (arduboy.justPressed(RIGHT_BUTTON)) {
       target.x = min(robot.pos.x+1, SCREEN_RIGHT);
+    } else if (arduboy.justPressed(A_BUTTON)) {
+      MODE=MODE_RESTART;
     }
     
     if (!occupied(target)) {
@@ -164,7 +170,6 @@ void modeMap() {
     } else {
       nki_index = MAP[target.x][target.y];
       if (nki_index == KITTEN) {
-
         MODE=MODE_FINDKITTEN_ANIM;
       } else {
         MODE=MODE_DIALOGUE;
@@ -211,6 +216,32 @@ void modeFindKittenAnimation() {
   }
     displayNKI(robot);
     displayNKI(kitten);
+}
+
+void modeRestart() {
+  printn("Restart?\n");
+  printn("\n");
+  printn(" Yes\n No");
+  if (cursorSelection == YES) {
+    arduboy.setCursor(SCREEN_LEFT, 16);
+  } else {
+    arduboy.setCursor(SCREEN_LEFT, 24);
+  }
+  arduboy.print(CURSOR);
+  if (arduboy.justPressed(DOWN_BUTTON)) {
+    cursorSelection = NO;
+  } else if (arduboy.justPressed(UP_BUTTON)) {
+    cursorSelection = YES;
+  } else if (arduboy.justPressed(B_BUTTON)) {
+    if (cursorSelection == YES) {
+      initialise();
+      MODE = MODE_MAP;
+    } else {
+      MODE = MODE_MAP;
+    }
+  } else if (arduboy.justPressed(A_BUTTON)) {
+    MODE = MODE_MAP;
+  }
 }
 
 void modePlayAgain() {
