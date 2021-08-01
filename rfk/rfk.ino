@@ -12,6 +12,7 @@
 #define MODE_FINDKITTEN_ANIM      4
 #define MODE_FINDKITTEN_DIALOGUE  5
 #define MODE_PLAYAGAIN            6
+#define MODE_TEST                 7
 
 #define ANY_BUTTON A_BUTTON | B_BUTTON | UP_BUTTON | DOWN_BUTTON | LEFT_BUTTON | RIGHT_BUTTON
 
@@ -42,7 +43,7 @@
 #define NO  0
 
 #define NUM_NKIS      14
-#define NUM_DIALOGUES 187
+#define NUM_DIALOGUES 199
 #define NUM_INTRO     5
 
 // types
@@ -68,7 +69,7 @@ nki_t kitten;
 
 int MAP[SCREEN_RIGHT+1][SCREEN_BOTTOM+1];
 
-byte MODE = MODE_START; //MODE_TEST;
+byte MODE = MODE_START;
 
 byte animationFrames = 0;
 
@@ -107,8 +108,16 @@ void loop() {
     case MODE_PLAYAGAIN:
       modePlayAgain();
       break;
+    case MODE_TEST:
+      modeTest();
+      break;
   }
   arduboy.display();
+}
+
+
+void modeTest() {
+
 }
 
 void modeStart() {
@@ -121,8 +130,10 @@ void modeStart() {
       introIndex = 0;
       MODE = MODE_MAP;
       return;
-    } else if (arduboy.justPressed(B_BUTTON)) {
+    } else if (arduboy.justPressed(B_BUTTON | DOWN_BUTTON | RIGHT_BUTTON)) {
       introIndex++;
+    } else if (arduboy.justPressed(UP_BUTTON | LEFT_BUTTON)) {
+      introIndex = max(0, introIndex-1);
     }
   } else {
     if (arduboy.justPressed(ANY_BUTTON)) {
@@ -166,7 +177,7 @@ void modeMap() {
 void modeDialogue() {
   displayDialogue(NKI[nki_index].dialogue);
     
-  if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(B_BUTTON)) {
+  if (arduboy.justPressed(ANY_BUTTON)) {
     MODE = MODE_MAP;
   }
 }
@@ -336,13 +347,13 @@ char randomCharacter() {
 void displayDialogue(uint8_t d) {
   char message[MAX_DIALOGUE_SIZE];
   strcpy_P(message, (PGM_P)pgm_read_word(&(dialogues[d])));
-  int x=2,y=2;
+  int x=0,y=0;
 
   int start = 0;
-  int end = 19;
+  int end = SCREEN_RIGHT+1;
   int length = strlen(message);
   int remaining = length;
-  while (remaining > 19) {
+  while (remaining > SCREEN_RIGHT+1) {
     while (message[end]!=' ') {
       end--;
     }
@@ -353,7 +364,7 @@ void displayDialogue(uint8_t d) {
     y+=CHAR_HEIGHT;
     remaining -= (end-start);
     start = end+1;
-    end = start+19;
+    end = start+SCREEN_RIGHT+1;
   }
   arduboy.setCursor(x,y);
   for (int i=start; i<length; i++) {
