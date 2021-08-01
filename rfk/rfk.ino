@@ -12,7 +12,6 @@
 #define MODE_FINDKITTEN_ANIM      4
 #define MODE_FINDKITTEN_DIALOGUE  5
 #define MODE_PLAYAGAIN            6
-#define MODE_TEST                 7
 
 #define ANY_BUTTON A_BUTTON | B_BUTTON | UP_BUTTON | DOWN_BUTTON | LEFT_BUTTON | RIGHT_BUTTON
 
@@ -35,21 +34,21 @@
 #define MAX_DIALOGUE_SIZE 140 //screen size in characters
 
 #define ROBOCHAR  '#'
-#define KITTEN    256 // arbitrary index greater than NUM_NKI
+#define KITTEN    255 // arbitrary index greater than NUM_NKI
 #define HEART     '\x03'
 #define CURSOR    '\x10'
 
 #define YES 1
 #define NO  0
 
-#define NUM_NKIS      10
-#define NUM_DIALOGUES 3
+#define NUM_NKIS      14
+#define NUM_DIALOGUES 187
 #define NUM_INTRO     5
 
 // types
 typedef struct {
-  int x;
-  int y;
+  uint8_t x;
+  uint8_t y;
 } position_t;
 
 typedef struct {
@@ -58,16 +57,9 @@ typedef struct {
   uint8_t dialogue;
 } nki_t;
 
-// function prototypes
-// void display(char* msg);
-// position_t screenPos(position_t pos);
- 
-
 //globals
-int introIndex = 0;
-int nki_index = -1;
-
-// int NUM_DIALOGUES;
+uint8_t introIndex = 0;
+uint8_t nki_index = -1;
 
 nki_t NKI[NUM_NKIS];
 
@@ -115,18 +107,8 @@ void loop() {
     case MODE_PLAYAGAIN:
       modePlayAgain();
       break;
-    case MODE_TEST:
-      modeTest();
-      break;
   }
   arduboy.display();
-}
-
-void modeTest() {
-  char buffer[10];
-  strcpy_P(buffer, (PGM_P)pgm_read_word(&(dialogues[0])));
-  arduboy.print(buffer);
-
 }
 
 void modeStart() {
@@ -296,7 +278,7 @@ void initialiseMap() {
 }
 
 void spawnNKIs() {
-  for (int i=0; i<NUM_NKIS; i++) {
+  for (uint8_t i=0; i<NUM_NKIS; i++) {
     NKI[i].character = randomCharacter();
     NKI[i].dialogue = random(0, NUM_DIALOGUES);
     position_t spawnPos = unoccupiedPosition();
