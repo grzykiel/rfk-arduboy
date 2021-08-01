@@ -2,6 +2,7 @@
 #include <Arduboy2.h>
 #include <string.h>
 #include "macros.h"
+#include "text.h"
 
 //game modes
 #define MODE_START                0
@@ -72,6 +73,10 @@ const char* intro[] = {
 int introIndex = 0;
 int NUM_INTRO;
 
+const char text1[] PROGMEM = "first";
+const char text2[] PROGMEM = "second";
+PGM_P const text[] PROGMEM = {text1, text2};
+
 const char* dialogues[] = {
   "A signpost saying \"TO KITTEN\". It points in no particular direction.",
   "Seven 1/4\" screws and a piece of plastic.",
@@ -89,7 +94,7 @@ nki_t kitten;
 
 int MAP[SCREEN_RIGHT+1][SCREEN_BOTTOM+1];
 
-byte MODE = MODE_START; //MODE_TEST;
+byte MODE = MODE_TEST;
 
 byte animationFrames = 0;
 
@@ -136,6 +141,9 @@ void loop() {
 }
 
 void modeTest() {
+  char buffer[10];
+  strcpy_P(buffer, (PGM_P)pgm_read_word(&(text[0])));
+  arduboy.print(buffer);
 
 }
 
