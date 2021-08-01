@@ -42,7 +42,9 @@
 #define YES 1
 #define NO  0
 
-#define NUM_NKIS  2
+#define NUM_NKIS      10
+#define NUM_DIALOGUES 3
+#define NUM_INTRO     5
 
 // types
 typedef struct {
@@ -62,30 +64,10 @@ typedef struct {
  
 
 //globals
-const char* intro[] = {
-  "robotfindskitten\nBy the illustrious\nLeonard Richardson\n(C) 1997\nWritten especially\nfor the Nerth Pork\nrobotfindskitten\ncontest",
-  "Adapted for Arduboy\nby Grzykiel",
-  "In this game, you are\nrobot (#). Your job\nis to find kitten.\nThis task is\ncomplicated by the\nexistence of various\nthings which are\nnot kitten.",
-  "Robot must touch\nitems to determine if\nthey are kitten or\nnot. The game ends\nwhen robotfindskitten.",
-  "Alternatively, you\nmay end the game by\nhitting the B\nbutton. See the\ndocumentation for\nmore information.",
-  "Press any button to\nstart."
-};
 int introIndex = 0;
-int NUM_INTRO;
-
-const char text1[] PROGMEM = "first";
-const char text2[] PROGMEM = "second";
-PGM_P const text[] PROGMEM = {text1, text2};
-
-const char* dialogues[] = {
-  "A signpost saying \"TO KITTEN\". It points in no particular direction.",
-  "Seven 1/4\" screws and a piece of plastic.",
-  "A third message"
-};
-
 int nki_index = -1;
 
-int NUM_DIALOGUES;
+// int NUM_DIALOGUES;
 
 nki_t NKI[NUM_NKIS];
 
@@ -94,7 +76,7 @@ nki_t kitten;
 
 int MAP[SCREEN_RIGHT+1][SCREEN_BOTTOM+1];
 
-byte MODE = MODE_TEST;
+byte MODE = MODE_START; //MODE_TEST;
 
 byte animationFrames = 0;
 
@@ -142,15 +124,17 @@ void loop() {
 
 void modeTest() {
   char buffer[10];
-  strcpy_P(buffer, (PGM_P)pgm_read_word(&(text[0])));
+  strcpy_P(buffer, (PGM_P)pgm_read_word(&(dialogues[0])));
   arduboy.print(buffer);
 
 }
 
 void modeStart() {
   initialise();
-  printn(intro[introIndex]);
-  if (introIndex < NUM_INTRO-1) {
+  char message[MAX_DIALOGUE_SIZE];
+  strcpy_P(message, (PGM_P)pgm_read_word(&(intro[introIndex])));
+  arduboy.print(message);
+  if (introIndex < NUM_INTRO) {
     if (arduboy.justPressed(A_BUTTON)) {
       introIndex = 0;
       MODE = MODE_MAP;
@@ -198,7 +182,7 @@ void modeMap() {
 }
 
 void modeDialogue() {
-  displayDialogue(dialogues[NKI[nki_index].dialogue]);
+  displayDialogue(NKI[nki_index].dialogue);
     
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(B_BUTTON)) {
     MODE = MODE_MAP;
@@ -289,9 +273,6 @@ void modePlayAgain() {
 }
 
 void initialise() {
-
-  NUM_DIALOGUES = sizeof(dialogues)/sizeof(dialogues[0]);
-  NUM_INTRO = sizeof(intro)/sizeof(intro[0]);
   animationFrames = 0;
   initialiseMap();  
   //initialise NKIs
@@ -370,23 +351,22 @@ char randomCharacter() {
   return (char) ascii;
 }
 
-void displayDialogue(char* msg) {
-  arduboy.clear();
-  arduboy.drawRect(SCREEN_LEFT_PX, SCREEN_TOP_PX, 
-                   SCREEN_RIGHT_PX, SCREEN_BOTTOM_PX);
-  
+void displayDialogue(uint8_t d) {
+  char message[MAX_DIALOGUE_SIZE];
+  strcpy_P(message, (PGM_P)pgm_read_word(&(dialogues[d])));
   int x=2,y=2;
 
   int start = 0;
   int end = 19;
-  int remaining = strlen(msg);
+  int length = strlen(message);
+  int remaining = length;
   while (remaining > 19) {
-    while (*(msg+end)!=' ') {
+    while (message[end]!=' ') {
       end--;
     }
     arduboy.setCursor(x,y);
     for (int i=start; i<end; i++) {
-      arduboy.print(*(msg+i));
+      arduboy.print(message[i]);
     }
     y+=CHAR_HEIGHT;
     remaining -= (end-start);
@@ -394,15 +374,8 @@ void displayDialogue(char* msg) {
     end = start+19;
   }
   arduboy.setCursor(x,y);
-  for (int i=start; i<strlen(msg); i++) {
-     arduboy.print(*(msg+i));
+  for (int i=start; i<length; i++) {
+     arduboy.print(message[i]);
   }
 }
-  
-//recognise newline characters
-void printn(char* str) {
-  int N = strlen(str);
-  for (int i=0; i<N; i++) {
-    arduboy.print(*(str+i));
-  }
-}
+
