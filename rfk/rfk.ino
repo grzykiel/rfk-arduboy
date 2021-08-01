@@ -11,6 +11,7 @@
 #define MODE_FINDKITTEN_ANIM      4
 #define MODE_FINDKITTEN_DIALOGUE  5
 #define MODE_PLAYAGAIN            6
+#define MODE_TEST                 7
 
 #define ANY_BUTTON A_BUTTON | B_BUTTON | UP_BUTTON | DOWN_BUTTON | LEFT_BUTTON | RIGHT_BUTTON
 
@@ -51,7 +52,7 @@ typedef struct {
 typedef struct {
   char character;
   position_t pos;
-  char* dialogue;
+  uint8_t dialogue;
 } nki_t;
 
 // function prototypes
@@ -88,7 +89,7 @@ nki_t kitten;
 
 int MAP[SCREEN_RIGHT+1][SCREEN_BOTTOM+1];
 
-byte MODE = MODE_START;
+byte MODE = MODE_START; //MODE_TEST;
 
 byte animationFrames = 0;
 
@@ -127,8 +128,15 @@ void loop() {
     case MODE_PLAYAGAIN:
       modePlayAgain();
       break;
+    case MODE_TEST:
+      modeTest();
+      break;
   }
   arduboy.display();
+}
+
+void modeTest() {
+
 }
 
 void modeStart() {
@@ -182,7 +190,7 @@ void modeMap() {
 }
 
 void modeDialogue() {
-  displayDialogue(NKI[nki_index].dialogue);
+  displayDialogue(dialogues[NKI[nki_index].dialogue]);
     
   if (arduboy.justPressed(A_BUTTON) || arduboy.justPressed(B_BUTTON)) {
     MODE = MODE_MAP;
@@ -219,9 +227,9 @@ void modeFindKittenAnimation() {
 }
 
 void modeRestart() {
-  printn("Restart?\n");
-  printn("\n");
-  printn(" Yes\n No");
+  arduboy.print(F("Restart?\n"));
+  arduboy.print(F("\n"));
+  arduboy.print(F(" Yes\n No"));
   if (cursorSelection == YES) {
     arduboy.setCursor(SCREEN_LEFT, 16);
   } else {
@@ -245,12 +253,12 @@ void modeRestart() {
 }
 
 void modePlayAgain() {
-  printn("You found kitten!\n");
-  printn("Way to go, robot!\n");
-  printn("\n");
-  printn("Play again?\n");
-  printn("\n");
-  printn(" Yes\n No");
+  arduboy.print(F("You found kitten!\n"));
+  arduboy.print(F("Way to go, robot!\n"));
+  arduboy.print(F("\n"));
+  arduboy.print(F("Play again?\n"));
+  arduboy.print(F("\n"));
+  arduboy.print(F(" Yes\n No"));
   if (cursorSelection == YES) {
     arduboy.setCursor(SCREEN_LEFT, 40);
   } else {
@@ -301,7 +309,7 @@ void initialiseMap() {
 void spawnNKIs() {
   for (int i=0; i<NUM_NKIS; i++) {
     NKI[i].character = randomCharacter();
-    NKI[i].dialogue = dialogues[random(0, NUM_DIALOGUES)];
+    NKI[i].dialogue = random(0, NUM_DIALOGUES);
     position_t spawnPos = unoccupiedPosition();
     MAP[spawnPos.x][spawnPos.y] = i;
     NKI[i].pos = spawnPos;
