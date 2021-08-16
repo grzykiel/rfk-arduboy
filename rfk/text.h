@@ -9,7 +9,7 @@ PGM_P const intro[] PROGMEM = {intro0, intro1, intro2, intro3, intro4, intro5};
 
 
 // DIALOGUES
-const char dialogue0[] PROGMEM = "I pity the fool who mistakes me for kitten!\", sez Mr. T.";
+const char dialogue0[] PROGMEM = "\"I pity the fool who mistakes me for kitten!\", sez Mr. T.";
 const char dialogue1[] PROGMEM = "That's just an old tin can.";
 const char dialogue2[] PROGMEM = "It's an altar to the horse god.";
 const char dialogue3[] PROGMEM = "A box of dancing mechanical pencils. They dance! They sing!";
